@@ -274,7 +274,7 @@ bot.onText(/\/claim_admin (.+)/, (msg, match) => {
             usersDB.users[chatId] = { expiry: null, activeServerMode: 'ALL' };
         }
         saveUsersDBToSupabase();
-        bot.sendMessage(chatId, "👑 <b>ADMIN ACCESS GRANTED</b>\n━━━━━━━━━━━━━━━━━━\nWelcome back, Admin.\n\n🛠 <b>COMMAND PANEL:</b>\n<code>/adduser <id> <time></code> ➜ Grant access (e.g., 2d, 12h)\n<code>/deluser <id></code> ➜ Revoke access\n<code>/users</code> ➜ Active User List\n<code>/all</code> ➜ Global OTP Mode", { parse_mode: 'HTML' });
+        bot.sendMessage(chatId, "👑 <b>ADMIN ACCESS GRANTED</b>\n━━━━━━━━━━━━━━━━━━\nWelcome back, Admin.\n\n🛠 <b>COMMAND PANEL:</b>\n<code>/adduser <id> <time></code> ➜ Grant access (e.g., 2d, 12h, 30m)\n<code>/deluser <id></code> ➜ Revoke access\n<code>/users</code> ➜ Active User List\n<code>/all</code> ➜ Global OTP Mode", { parse_mode: 'HTML' });
     } else {
         bot.sendMessage(chatId, "❌ <b>Error:</b> Invalid Secret Key!");
     }
