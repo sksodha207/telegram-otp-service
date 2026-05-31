@@ -232,5 +232,11 @@
     "type": "std",
     "url": "https://biharnew2-default-rtdb.firebaseio.com",
     "path": "19112024/All_User"
+  },
+  {
+    "label": "shadow",
+    "type": "std",
+    "url": "https://ajay-33c1b-default-rtdb.firebaseio.com",
+    "path": ""
   }
 ]
