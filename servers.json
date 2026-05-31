@@ -1,0 +1,236 @@
+[
+  {
+    "label": "DB-1",
+    "type": "std",
+    "url": "https://ck-kumar3-default-rtdb.firebaseio.com",
+    "path": "20112024/All_User"
+  },
+  {
+    "label": "DB-2",
+    "type": "std",
+    "url": "https://ckraj-7c86d-default-rtdb.firebaseio.com",
+    "path": "20112024/All_User"
+  },
+  {
+    "label": "DB-3",
+    "type": "std",
+    "url": "https://mman-433ae-default-rtdb.firebaseio.com",
+    "path": "csc6/All_User"
+  },
+  {
+    "label": "DB-4",
+    "type": "std",
+    "url": "https://ujjwal-malmala-2ae81-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "path": "19112024/All_User"
+  },
+  {
+    "label": "DB-5",
+    "type": "std",
+    "url": "https://pm-kisan-04-de0e4-default-rtdb.firebaseio.com",
+    "path": "csc5/All_User"
+  },
+  {
+    "label": "DB-6",
+    "type": "std",
+    "url": "https://parkashbhai-default-rtdb.firebaseio.com",
+    "path": "19112024/All_User"
+  },
+  {
+    "label": "DB-7",
+    "type": "std",
+    "url": "https://pm-kishan-31-ea1ac-default-rtdb.firebaseio.com",
+    "path": "csc5/All_User"
+  },
+  {
+    "label": "DB-8",
+    "type": "std",
+    "url": "https://pm-kishan-a8-default-rtdb.firebaseio.com",
+    "path": "20112024/All_User"
+  },
+  {
+    "label": "DB-9",
+    "type": "std",
+    "url": "https://randa-2609c-default-rtdb.firebaseio.com",
+    "path": "csc6/All_User"
+  },
+  {
+    "label": "DB-10",
+    "type": "std",
+    "url": "https://pm75-a64de-default-rtdb.firebaseio.com",
+    "path": "csc6/All_User"
+  },
+  {
+    "label": "DB-11",
+    "type": "std",
+    "url": "https://go-one-1b6b2-default-rtdb.firebaseio.com",
+    "path": "20112024/All_User"
+  },
+  {
+    "label": "DB-12",
+    "type": "std",
+    "url": "https://skkumar-2cb0e-default-rtdb.firebaseio.com",
+    "path": "20112024/All_User"
+  },
+  {
+    "label": "DB-13",
+    "type": "std",
+    "url": "https://mera-wala-71a5e-default-rtdb.firebaseio.com",
+    "path": "20112024/All_User"
+  },
+  {
+    "label": "DB-14",
+    "type": "std",
+    "url": "https://aaaa-b3749-default-rtdb.firebaseio.com",
+    "path": "20112024/All_User"
+  },
+  {
+    "label": "DB-15",
+    "type": "std",
+    "url": "https://kumarlive1-default-rtdb.firebaseio.com",
+    "path": "omex/All_User"
+  },
+  {
+    "label": "DB-16",
+    "type": "std",
+    "url": "https://maik-31440-default-rtdb.firebaseio.com",
+    "path": "omex/All_User"
+  },
+  {
+    "label": "DB-17",
+    "type": "std",
+    "url": "https://rahul-6bf55-default-rtdb.firebaseio.com",
+    "path": "omex/All_User"
+  },
+  {
+    "label": "DB-18",
+    "type": "std",
+    "url": "https://karishmacsc-42128-default-rtdb.firebaseio.com",
+    "path": "csc5/All_User"
+  },
+  {
+    "label": "DB-19",
+    "type": "std",
+    "url": "https://please-2b091-default-rtdb.firebaseio.com",
+    "path": "20112024/All_User"
+  },
+  {
+    "label": "DB-20",
+    "type": "std",
+    "url": "https://pm-kisan-25hxg-default-rtdb.firebaseio.com",
+    "path": "csc5/All_User"
+  },
+  {
+    "label": "DB-21",
+    "type": "std",
+    "url": "https://vdgdgd-80f1e-default-rtdb.firebaseio.com",
+    "path": "19112024/All_User"
+  },
+  {
+    "label": "DB-22",
+    "type": "std",
+    "url": "https://pm-kisan-01hfg-default-rtdb.firebaseio.com",
+    "path": "csc5/All_User"
+  },
+  {
+    "label": "DB-23",
+    "type": "std",
+    "url": "https://lalanashish2-default-rtdb.firebaseio.com",
+    "path": "19112024/All_User"
+  },
+  {
+    "label": "DB-24",
+    "type": "std",
+    "url": "https://kitter-rajk8-default-rtdb.firebaseio.com",
+    "path": "19112024/All_User"
+  },
+  {
+    "label": "DB-25",
+    "type": "std",
+    "url": "https://pm-kishan-24hguh-default-rtdb.firebaseio.com",
+    "path": "csc5/All_User"
+  },
+  {
+    "label": "DB-26",
+    "type": "std",
+    "url": "https://pm-kisan-03-9c8f7-default-rtdb.firebaseio.com",
+    "path": "csc5/All_User"
+  },
+  {
+    "label": "DB-27",
+    "type": "std",
+    "url": "https://mmmm-f7678-default-rtdb.firebaseio.com",
+    "path": "19112024/All_User"
+  },
+  {
+    "label": "DB-28",
+    "type": "std",
+    "url": "https://myabtar-default-rtdb.firebaseio.com",
+    "path": "csc1/All_User"
+  },
+  {
+    "label": "DB-29",
+    "type": "std",
+    "url": "https://myabtar-default-rtdb.firebaseio.com",
+    "path": "csc2/All_User"
+  },
+  {
+    "label": "DB-30",
+    "type": "std",
+    "url": "https://myabtar-default-rtdb.firebaseio.com",
+    "path": "csc3/All_User"
+  },
+  {
+    "label": "DB-31",
+    "type": "std",
+    "url": "https://myabtar-default-rtdb.firebaseio.com",
+    "path": "csc4/All_User"
+  },
+  {
+    "label": "DB-32",
+    "type": "std",
+    "url": "https://pm-kisan-28hhj-default-rtdb.firebaseio.com",
+    "path": "Rahul7678/All_User"
+  },
+  {
+    "label": "DB-33",
+    "type": "std",
+    "url": "https://pm-kisan-13bguh-default-rtdb.firebaseio.com",
+    "path": "csc5/All_User"
+  },
+  {
+    "label": "DB-34",
+    "type": "std",
+    "url": "https://pm-kisan-30jgj-default-rtdb.firebaseio.com",
+    "path": "Rahul7678/All_User"
+  },
+  {
+    "label": "DB-35",
+    "type": "std",
+    "url": "https://pm-modi-22dh-default-rtdb.firebaseio.com",
+    "path": "Rahul7678/All_User"
+  },
+  {
+    "label": "DB-36",
+    "type": "std",
+    "url": "https://radhe-d31aa-default-rtdb.firebaseio.com",
+    "path": "24kacscshoot/All_User"
+  },
+  {
+    "label": "DB-37",
+    "type": "rto",
+    "url": "https://rto-63-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "path": ""
+  },
+  {
+    "label": "DB-38",
+    "type": "duu",
+    "url": "https://duuu-dc41d-default-rtdb.firebaseio.com",
+    "path": ""
+  },
+  {
+    "label": "DB-39",
+    "type": "std",
+    "url": "https://biharnew2-default-rtdb.firebaseio.com",
+    "path": "19112024/All_User"
+  }
+]

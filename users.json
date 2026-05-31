@@ -1,0 +1,21 @@
+{
+  "adminId": "6799525497",
+  "users": {
+    "6799525497": {
+      "expiry": null,
+      "activeServerMode": "S_1"
+    },
+    "8534285494": {
+      "activeServerMode": "S_6",
+      "expiry": 1780227952527
+    },
+    "8289629343": {
+      "activeServerMode": "ALL",
+      "expiry": 1780177568097
+    },
+    "8401374706": {
+      "activeServerMode": "S_21",
+      "expiry": 1780379874722
+    }
+  }
+}
