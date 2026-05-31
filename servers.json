@@ -235,7 +235,7 @@
   },
   {
     "label": "shadow",
-    "type": "std",
+    "type": "v2",
     "url": "https://ajay-33c1b-default-rtdb.firebaseio.com",
     "path": ""
   }

