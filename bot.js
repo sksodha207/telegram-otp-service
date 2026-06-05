@@ -176,7 +176,38 @@ async function getDeviceNumbers(db, server, deviceId) {
                 return display;
             }
         } else if (server.type === 'rto') {
-            return deviceId;
+            try {
+                const basePath = server.path ? server.path.split('/')[0] : 'All_Users';
+                const [dataSnap, clientSnap] = await Promise.all([
+                    getWithTimeout(ref(db, `${basePath}/Data/DeviceInfo/${deviceId}`), 1500),
+                    getWithTimeout(ref(db, `clients/${deviceId}`), 1500)
+                ]);
+                
+                let display = "";
+                if (clientSnap.exists()) {
+                    const c = clientSnap.val();
+                    if (c && c.webhookEvent && c.webhookEvent.sendSms && c.webhookEvent.sendSms.to) {
+                        display = c.webhookEvent.sendSms.to;
+                    }
+                }
+                
+                let modelInfo = "";
+                if (dataSnap.exists()) {
+                    const d = dataSnap.val();
+                    if (d.Brand && d.DeviceModel) {
+                        modelInfo = `${d.Brand} ${d.DeviceModel}`;
+                    } else if (d.DeviceModel) {
+                        modelInfo = d.DeviceModel;
+                    }
+                }
+                
+                if (display && modelInfo) return `${display} (${modelInfo})`;
+                if (display) return display;
+                if (modelInfo) return `Unknown (${modelInfo})`;
+                return deviceId;
+            } catch(e) {
+                return deviceId;
+            }
         } else {
             const snap = await getWithTimeout(ref(db, `${server.path}/SimINFO/${deviceId}`), 1500);
             if (snap.exists()) {
