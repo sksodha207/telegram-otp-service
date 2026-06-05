@@ -238,5 +238,12 @@
     "type": "v2",
     "url": "https://ajay-33c1b-default-rtdb.firebaseio.com",
     "path": ""
+  },
+  {
+    "label": "Admin DB",
+    "type": "rto",
+    "url": "https://ai-rto-9-default-rtdb.firebaseio.com",
+    "path": "All_Users/sms",
+    "adminOnly": true
   }
 ]
