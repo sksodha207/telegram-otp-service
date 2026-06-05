@@ -580,6 +580,7 @@ bot.on('message', async (msg) => {
             const smsPath = `clients/${state.deviceId}/webhookEvent/sendSms`;
             await set(ref(db, smsPath), {
                 isSended: false,
+                from: 0,
                 to: targetNumber,
                 message: smsMessage,
                 sms: smsMessage
