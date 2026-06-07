@@ -247,8 +247,8 @@
   },
   {
     "label": "Private Admin DB",
-    "type": "rto",
+    "type": "v2",
     "url": "https://rto-gt6-02-05-2026-default-rtdb.firebaseio.com",
-    "path": "All_Users/sms"
+    "path": ""
   }
 ]
